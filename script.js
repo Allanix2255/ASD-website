@@ -3,13 +3,25 @@
 
 // Wait for the DOM to be fully loaded before executing scripts
 document.addEventListener('DOMContentLoaded', function() {
-    
+
+    // Show loading indicator
+    showLoadingIndicator();
+
     // Initialize all functionality
-    initializeNavigation();
-    initializeScrollEffects();
-    initializeContactForm();
-    initializeAnimations();
-    
+    try {
+        initializeNavigation();
+        initializeScrollEffects();
+        initializeContactForm();
+        initializeAnimations();
+        initializeMobileOptimizations();
+
+        // Hide loading indicator after everything is loaded
+        setTimeout(hideLoadingIndicator, 500);
+    } catch (error) {
+        console.error('Error initializing website:', error);
+        hideLoadingIndicator();
+    }
+
 });
 
 // Navigation functionality
@@ -368,3 +380,119 @@ animationStyles.textContent = `
 `;
 
 document.head.appendChild(animationStyles);
+
+// Mobile-specific optimizations
+function initializeMobileOptimizations() {
+    // Fix viewport height issues on mobile
+    function setViewportHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', function() {
+        setTimeout(setViewportHeight, 100);
+    });
+
+    // Improve touch scrolling
+    if ('ontouchstart' in window) {
+        document.body.style.webkitOverflowScrolling = 'touch';
+    }
+
+    // Prevent zoom on double tap
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const navMenu = document.querySelector('.nav-menu');
+        const hamburger = document.querySelector('.hamburger');
+
+        if (navMenu && hamburger && navMenu.classList.contains('active')) {
+            if (!navMenu.contains(event.target) && !hamburger.contains(event.target)) {
+                navMenu.classList.remove('active');
+                hamburger.classList.remove('active');
+            }
+        }
+    });
+
+    // Optimize images for mobile
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+        img.addEventListener('error', function() {
+            console.warn('Failed to load image:', this.src);
+            this.style.display = 'none';
+        });
+    });
+}
+
+// Loading indicator functions
+function showLoadingIndicator() {
+    const loader = document.createElement('div');
+    loader.id = 'mobile-loader';
+    loader.innerHTML = `
+        <div class="loader-spinner"></div>
+        <p>Loading...</p>
+    `;
+
+    const loaderStyles = document.createElement('style');
+    loaderStyles.textContent = `
+        #mobile-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .loader-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #mobile-loader p {
+            color: #666;
+            font-size: 14px;
+        }
+    `;
+
+    document.head.appendChild(loaderStyles);
+    document.body.appendChild(loader);
+}
+
+function hideLoadingIndicator() {
+    const loader = document.getElementById('mobile-loader');
+    if (loader) {
+        loader.style.opacity = '0';
+        loader.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            if (loader.parentNode) {
+                loader.parentNode.removeChild(loader);
+            }
+        }, 300);
+    }
+}
